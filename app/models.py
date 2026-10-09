@@ -3,7 +3,15 @@ from decimal import Decimal
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,7 +29,9 @@ class Account(Base):
     owner_name: Mapped[str] = mapped_column(String(120))
     currency: Mapped[str] = mapped_column(String(3))
     opening_balance: Mapped[Decimal] = mapped_column(Numeric(18, 2), default=Decimal("0.00"))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     __table_args__ = (
         CheckConstraint("opening_balance >= 0", name="ck_accounts_opening_balance_non_negative"),
@@ -37,7 +47,9 @@ class Transfer(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
     currency: Mapped[str] = mapped_column(String(3))
     idempotency_key: Mapped[str] = mapped_column(String(128), unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     entries: Mapped[list["LedgerEntry"]] = relationship(back_populates="transfer")
 
@@ -58,7 +70,9 @@ class LedgerEntry(Base):
     account_id: Mapped[UUID] = mapped_column(ForeignKey("accounts.id"))
     direction: Mapped[EntryDirection] = mapped_column(Enum(EntryDirection))
     amount: Mapped[Decimal] = mapped_column(Numeric(18, 2))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     transfer: Mapped[Transfer] = relationship(back_populates="entries")
 
@@ -66,4 +80,3 @@ class LedgerEntry(Base):
         CheckConstraint("amount > 0", name="ck_entries_amount_positive"),
         UniqueConstraint("transfer_id", "direction", name="uq_transfer_direction"),
     )
-

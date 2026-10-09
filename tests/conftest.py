@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_session
@@ -37,4 +37,3 @@ def client(session_factory):
 def session(session_factory):
     with session_factory() as database_session:
         yield database_session
-
