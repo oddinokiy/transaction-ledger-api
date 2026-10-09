@@ -11,7 +11,10 @@ A small financial ledger service built to demonstrate Python API development, re
 - Double-entry ledger: each transfer creates one debit and one matching credit
 - Atomic transfer creation with row locking on PostgreSQL
 - Idempotency keys prevent duplicate transfers
+- Transactional outbox records domain events without a database/message-broker dual write
 - Currency and insufficient-funds validation
+- Daily transfer-volume reporting endpoint
+- Alembic database migrations
 - Unit/integration tests and GitHub Actions
 
 ## Data model
@@ -29,6 +32,12 @@ docker compose up --build
 ```
 
 OpenAPI documentation: `http://localhost:8000/docs`
+
+Apply migrations explicitly when running outside the demo container lifecycle:
+
+```bash
+alembic upgrade head
+```
 
 ## Example
 
@@ -61,4 +70,4 @@ pytest --cov=app
 
 ## Scope and limitations
 
-This is a portfolio project, not a production payment system. It does not yet implement authentication, foreign exchange, asynchronous event delivery, Alembic migrations, or reconciliation. Those are explicit follow-up milestones rather than implied capabilities.
+This is a portfolio project, not a production payment system. It does not yet implement authentication, foreign exchange, asynchronous event publication to Kafka, or reconciliation. The outbox table establishes a safe hand-off point for a future event publisher without claiming that a broker is already integrated.

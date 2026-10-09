@@ -4,6 +4,7 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     DateTime,
     Enum,
@@ -80,3 +81,18 @@ class LedgerEntry(Base):
         CheckConstraint("amount > 0", name="ck_entries_amount_positive"),
         UniqueConstraint("transfer_id", "direction", name="uq_transfer_direction"),
     )
+
+
+class OutboxEvent(Base):
+    """Event persisted in the same transaction as the business change."""
+
+    __tablename__ = "outbox_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    event_type: Mapped[str] = mapped_column(String(80))
+    aggregate_id: Mapped[UUID]
+    payload: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

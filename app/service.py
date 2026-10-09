@@ -1,10 +1,11 @@
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from app.models import Account, EntryDirection, LedgerEntry, Transfer
+from app.models import Account, EntryDirection, LedgerEntry, OutboxEvent, Transfer
 from app.schemas import AccountCreate, TransferCreate
 
 
@@ -92,6 +93,20 @@ def create_transfer(
         ),
     ]
     session.add(transfer)
+    session.flush()
+    session.add(
+        OutboxEvent(
+            event_type="transfer.created",
+            aggregate_id=transfer.id,
+            payload={
+                "transfer_id": str(transfer.id),
+                "source_account_id": str(source.id),
+                "destination_account_id": str(destination.id),
+                "amount": str(payload.amount),
+                "currency": source.currency,
+            },
+        )
+    )
     session.commit()
     session.refresh(transfer)
     return transfer
@@ -102,4 +117,17 @@ def get_account(session: Session, account_id: UUID) -> Account:
     if account is None:
         raise AccountNotFound("Account does not exist")
     return account
+
+
+def daily_volume(session: Session, report_date: date, currency: str) -> tuple[int, Decimal]:
+    start = datetime.combine(report_date, time.min)
+    end = start + timedelta(days=1)
+    count, total = session.execute(
+        select(func.count(Transfer.id), func.coalesce(func.sum(Transfer.amount), 0)).where(
+            Transfer.currency == currency.upper(),
+            Transfer.created_at >= start,
+            Transfer.created_at < end,
+        )
+    ).one()
+    return int(count), Decimal(total)
 

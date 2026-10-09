@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A small double-entry transaction ledger API built as a software engineering portfolio project."
 requires-python = ">=3.11"
 dependencies = [
+  "alembic>=1.14,<2",
   "fastapi>=0.115,<1",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.6,<3",
@@ -29,4 +30,8 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+exclude = ["migrations*"]
 

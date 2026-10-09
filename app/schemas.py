@@ -49,3 +49,10 @@ class TransferRead(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class DailyVolumeRead(BaseModel):
+    date: str
+    currency: str
+    transfer_count: int
+    total_amount: Decimal
+

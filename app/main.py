@@ -1,11 +1,19 @@
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.database import Base, engine, get_session
-from app.schemas import AccountCreate, AccountRead, BalanceRead, TransferCreate, TransferRead
+from app.database import get_session
+from app.schemas import (
+    AccountCreate,
+    AccountRead,
+    BalanceRead,
+    DailyVolumeRead,
+    TransferCreate,
+    TransferRead,
+)
 from app.service import (
     AccountNotFound,
     CurrencyMismatch,
@@ -14,10 +22,9 @@ from app.service import (
     account_balance,
     create_account,
     create_transfer,
+    daily_volume,
     get_account,
 )
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Transaction Ledger API",
@@ -64,4 +71,19 @@ def post_transfer(
     except (CurrencyMismatch, InsufficientFunds, LedgerError) as error:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
     return TransferRead.model_validate(transfer)
+
+
+@app.get("/reports/daily-volume", response_model=DailyVolumeRead)
+def get_daily_volume(
+    report_date: date,
+    currency: str,
+    session: SessionDependency,
+) -> DailyVolumeRead:
+    transfer_count, total_amount = daily_volume(session, report_date, currency)
+    return DailyVolumeRead(
+        date=report_date.isoformat(),
+        currency=currency.upper(),
+        transfer_count=transfer_count,
+        total_amount=total_amount,
+    )
 
